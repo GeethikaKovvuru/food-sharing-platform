@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receiver Dashboard - FoodShare</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/app.js"></script>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="logo">FoodShare | Receiver</div>
+        <div class="nav-links">
+            <a href="#" onclick="logout()">Logout</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <h2>Available Donations</h2>
+        <div class="card-grid" id="availableDonations">
+            <!-- Dynamically populated -->
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('token');
+            const role = localStorage.getItem('role');
+
+            if (!token || role !== 'Receiver') {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const API_URL = 'http://localhost:5000/api';
+
+            const fetchDonations = async () => {
+                try {
+                    const res = await fetch(`${API_URL}/donations`);
+                    const donations = await res.json();
+                    const list = document.getElementById('availableDonations');
+                    list.innerHTML = '';
+
+                    donations.forEach(d => {
+                        const donorName = d.donor_id ? d.donor_id.name : 'Unknown';
+                        list.innerHTML += `
+              <div class="card">
+                <h3>${d.food_name}</h3>
+                <p><strong>Donor:</strong> ${donorName}</p>
+                <p><strong>Quantity:</strong> ${d.quantity}</p>
+                <p><strong>Expiry:</strong> ${new Date(d.expiry_date).toLocaleString()}</p>
+                <p><strong>Address:</strong> ${d.address}</p>
+                <button class="btn" style="margin-top: 15px;" onclick="claimDonation('${d._id}')">Claim Food</button>
+              </div>
+            `;
+                    });
+
+                    if (donations.length === 0) {
+                        list.innerHTML = '<p>No pending donations available at the moment.</p>';
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
+            };
+
+            await fetchDonations();
+
+            window.claimDonation = async (id) => {
+                if (!confirm('Are you sure you want to claim this donation? You are expected to pick it up.')) return;
+
+                try {
+                    const res = await fetch(`${API_URL}/claims/${id}`, {
+                        method: 'POST',
+                        headers: { 'x-auth-token': token }
+                    });
+
+                    if (res.ok) {
+                        alert('Claimed successfully! Please proceed to pickup address.');
+                        fetchDonations();
+                    } else {
+                        const data = await res.json();
+                        alert(data.msg || 'Failed to claim');
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
+            };
+        });
+    </script>
+</body>
+
+</html>

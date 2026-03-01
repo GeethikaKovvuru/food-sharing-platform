@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - FoodShare</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/app.js"></script>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="logo">FoodShare | Admin</div>
+        <div class="nav-links">
+            <a href="#" onclick="logout()">Logout</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <h2>All Pending Donations</h2>
+        <div class="card-grid" id="allDonations">
+            <!-- Dynamically populated -->
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('token');
+            const role = localStorage.getItem('role');
+
+            if (!token || role !== 'Admin') {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const API_URL = 'http://localhost:5000/api';
+
+            const fetchDonations = async () => {
+                try {
+                    const res = await fetch(`${API_URL}/donations`);
+                    const donations = await res.json();
+                    const list = document.getElementById('allDonations');
+                    list.innerHTML = '';
+
+                    donations.forEach(d => {
+                        const donorName = d.donor_id ? d.donor_id.name : 'Unknown';
+                        list.innerHTML += `
+              <div class="card">
+                <h3>${d.food_name}</h3>
+                <p><strong>ID:</strong> ${d._id}</p>
+                <p><strong>Donor:</strong> ${donorName}</p>
+                <p><strong>Quantity:</strong> ${d.quantity}</p>
+                <p><strong>Status:</strong> ${d.status}</p>
+              </div>
+            `;
+                    });
+
+                    if (donations.length === 0) {
+                        list.innerHTML = '<p>No pending donations available at the moment.</p>';
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
+            };
+
+            await fetchDonations();
+        });
+    </script>
+</body>
+
+</html>
