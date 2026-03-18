@@ -18,14 +18,34 @@ router.post('/:id', auth, async (req, res) => {
         await donation.save();
 
         const claim = new Claim({
-            donation_id: donation._id,
-            receiver_id: req.user.id
+            donationId: donation._id,
+            receiverId: req.user.id,
+            selectedPickupTime: req.body.selectedPickupTime
         });
         await claim.save();
+
+        // Socket.io notification emission could go here, handled by req.app
+        const io = req.app.get('io');
+        if (io) {
+            io.to(donation.donorId.toString()).emit('donationClaimed', {
+                message: `Your donation "${donation.foodName}" has been claimed!`,
+                donationId: donation._id
+            });
+        }
 
         res.json({ msg: 'Food claimed successfully', claim });
     } catch (err) {
         console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+// Get User's claims
+router.get('/my-claims', auth, async (req, res) => {
+    try {
+        const claims = await Claim.find({ receiverId: req.user.id }).populate('donationId');
+        res.json(claims);
+    } catch (err) {
         res.status(500).send('Server Error');
     }
 });
