@@ -27,7 +27,7 @@ Built using **React (frontend)**, **Node.js/Express (backend)**, and **MongoDB (
 
 1. Navigate to the backend directory:
    ```bash
-   cd backend
+   cd FoodShare/backend
    ```
 
 2. Install dependencies:
